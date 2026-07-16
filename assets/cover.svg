@@ -1,0 +1,10 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#5cbbf2"/>
+  <rect x="40" y="40" width="1120" height="550" rx="28" fill="#fffef5" stroke="#111" stroke-width="6"/>
+  <circle cx="200" cy="170" r="78" fill="#ffde00" stroke="#111" stroke-width="6"/>
+  <circle cx="950" cy="180" r="64" fill="#00aeef" stroke="#111" stroke-width="6"/>
+  <rect x="170" y="310" width="860" height="180" rx="20" fill="#f7931e" stroke="#111" stroke-width="6"/>
+  <text x="600" y="220" text-anchor="middle" font-family="'Trebuchet MS', 'Arial Black', sans-serif" font-size="56" font-weight="700" fill="#111">Simpsons Quotes Battle</text>
+  <text x="600" y="395" text-anchor="middle" font-family="'Trebuchet MS', 'Arial Black', sans-serif" font-size="42" font-weight="700" fill="#111">Juego web educativo</text>
+  <text x="600" y="455" text-anchor="middle" font-family="'Trebuchet MS', 'Arial Black', sans-serif" font-size="28" fill="#111">Adivina quién dijo cada cita de Springfield</text>
+</svg>

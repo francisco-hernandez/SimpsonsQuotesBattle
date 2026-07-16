@@ -30,7 +30,15 @@ limitations:
 
 MIT License
 
-Copyright (c) [year] [fullname]
+Copyright (c) 2026 Francisco Hernández
+
+Este proyecto puede descargarse, copiarse y utilizarse libremente para fines educativos, de práctica y demostración.
+
+Se ofrece tal cual, sin garantía de funcionamiento perfecto ni soporte oficial. El proyecto ha sido creado con fines pedagógicos y de aprendizaje, y utiliza datos de APIs externas para complementar la experiencia de juego.
+
+Referencia de la API utilizada:
+- https://thesimpsonsapi.up.railway.app/characters
+- https://api.sampleapis.com/simpsons/characters
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
