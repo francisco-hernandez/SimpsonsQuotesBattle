@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simpsons Quotes Battle</title>
+  
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Google Fonts: Luckiest Guy (Simpsons Header style), Gochi Hand (Chalkboard style), Outfit (Modern UI text) -->
+  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Gochi+Hand&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+  
+  <!-- Canvas Confetti for victory animations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* ==========================================================================
+       1. VARIABLES Y DISEÑO NEOPATRÓN (NEOBRUTALISM / COMIC)
+       ========================================================================== */
+    :root {
+      --simpsons-yellow: #FFDE00;
+      --simpsons-blue: #00AEEF;
+      --simpsons-orange: #F7931E;
+      --simpsons-green: #7AC143;
+      --simpsons-pink: #D93A8B;
+      --correct-green: #4E9F3D;
+      --incorrect-red: #D83A56;
+      --border-color: #000000;
+      --bg-sky-light: #5cbbf2;
+      --bg-sky-dark: #0a0f1d;
+    }
+
+    body {
+      background-color: var(--bg-sky-light);
+      font-family: 'Outfit', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      transition: background-color 0.5s ease;
+      position: relative;
+    }
+
+    body.dark-mode {
+      background-color: var(--bg-sky-dark);
+    }
+
+    /* ==========================================================================
+       2. ELEMENTOS DE FONDO - NUBES ANIMADAS / ESTRELLAS
+       ========================================================================== */
+    .sky-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -10;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    /* Animación de desplazamiento horizontal para simular el inicio de Los Simpsons */
+    @keyframes floatClouds {
+      0% { transform: translateX(-200px); }
+      100% { transform: translateX(calc(100vw + 200px)); }
+    }
+
+    .cloud {
+      position: absolute;
+      filter: drop-shadow(5px 5px 0px rgba(0,0,0,0.12));
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    body.dark-mode .cloud path {
+      fill: #1e293b;
+      stroke: #475569;
+    }
+
+    .cloud-1 { top: 12%; animation: floatClouds 38s linear infinite; }
+    .cloud-2 { top: 28%; animation: floatClouds 28s linear infinite; animation-delay: -8s; }
+    .cloud-3 { top: 52%; animation: floatClouds 52s linear infinite; animation-delay: -25s; }
+    .cloud-4 { top: 78%; animation: floatClouds 34s linear infinite; animation-delay: -4s; }
+
+    /* Estrellas nocturnas (solo visibles en modo oscuro) */
+    .star {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background-color: #fff;
+      border-radius: 50%;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+
+    body.dark-mode .star {
+      opacity: 0.8;
+      animation: pulseStar 3s infinite ease-in-out;
+    }
+
+    @keyframes pulseStar {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+
+    /* ==========================================================================
+       3. CONTENEDORES Y ESTRUCTURA TIPO CÓMIC (NEO-BRUTALISM)
+       ========================================================================== */
+    .comic-card {
+      background-color: #ffffff;
+      border: 5px solid var(--border-color);
+      border-radius: 20px;
+      box-shadow: 10px 10px 0px var(--border-color);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+      position: relative;
+    }
+
+    body.dark-mode .comic-card {
+      background-color: #1e293b;
+      color: #f8fafc;
+    }
+
+    .comic-inner-card {
+      background-color: #f8f9fa;
+      border: 3px solid var(--border-color);
+      border-radius: 12px;
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark-mode .comic-inner-card {
+      background-color: #334155;
+      color: #e2e8f0;
+    }
+
+    .comic-nav {
+      background-color: #ffffff;
+      border: 3px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 5px 5px 0px var(--border-color);
+      padding: 10px 15px;
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark-mode .comic-nav {
+      background-color: #1e293b;
+      color: #f8fafc;
+    }
+
+    /* ==========================================================================
+       4. BOTONES INTERACTIVOS Y TIPOGRAFÍA
+       ========================================================================== */
+    .simpsons-title {
+      font-family: 'Luckiest Guy', cursive;
+      color: var(--simpsons-yellow);
+      text-transform: uppercase;
+      font-size: 3.5rem;
+      letter-spacing: 3px;
+      margin: 0;
+      /* Delineado negro y sombreado 3D clásico */
+      text-shadow: 
+        -2px -2px 0 #000, 
+         2px -2px 0 #000, 
+        -2px  2px 0 #000, 
+         2px  2px 0 #000, 
+         6px  6px 0px #1b4f97;
+    }
+
+    body.dark-mode .simpsons-title {
+      text-shadow: 
+        -2px -2px 0 #000, 
+         2px -2px 0 #000, 
+        -2px  2px 0 #000, 
+         2px  2px 0 #000, 
+         6px  6px 0px #090c15;
+    }
+
+    .simpsons-subtitle {
+      font-family: 'Luckiest Guy', cursive;
+      color: #ffffff;
+      font-size: 2.2rem;
+      text-transform: uppercase;
+      margin: 0;
+      text-shadow: 
+        -2px -2px 0 #000, 
+         2px -2px 0 #000, 
+        -2px  2px 0 #000, 
+         2px  2px 0 #000, 
+         4px  4px 0px #e03232;
+    }
+
+    /* Botón general estilo cómic */
+    .comic-btn {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      text-transform: uppercase;
+      border: 3px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0px var(--border-color);
+      transition: all 0.15s ease;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .comic-btn:hover:not(:disabled) {
+      transform: translate(-3px, -3px);
+      box-shadow: 7px 7px 0px var(--border-color);
+    }
+
+    .comic-btn:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px var(--border-color);
+    }
+
+    .comic-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Botones pequeños para la barra superior */
+    .comic-btn-sm {
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 3px 3px 0px var(--border-color);
+      padding: 5px 12px;
+      font-weight: 700;
+      transition: all 0.1s ease;
+      font-size: 0.9rem;
+    }
+
+    .comic-btn-sm:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0px var(--border-color);
+    }
+
+    .comic-btn-sm:active {
+      transform: translate(1px, 1px);
+      box-shadow: 2px 2px 0px var(--border-color);
+    }
+
+    /* Botones de opción de trivia (con colores Springfield) */
+    .comic-btn-choice {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      padding: 15px;
+      border: 3px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: 4px 4px 0px var(--border-color);
+      transition: all 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      text-align: center;
+      color: #000;
+      cursor: pointer;
+      background-color: #ffffff;
+      width: 100%;
+    }
+
+    .comic-btn-choice:hover:not(:disabled) {
+      transform: translate(-3px, -3px);
+      box-shadow: 7px 7px 0px var(--border-color);
+    }
+
+    .comic-btn-choice:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 2px 2px 0px var(--border-color);
+    }
+
+    /* Clases de colores personalizados para botones de respuesta */
+    .opt-blue { background-color: var(--simpsons-blue); color: #fff; }
+    .opt-orange { background-color: var(--simpsons-orange); color: #fff; }
+    .opt-green { background-color: var(--simpsons-green); color: #fff; }
+    .opt-pink { background-color: var(--simpsons-pink); color: #fff; }
+
+    /* Clases de retroalimentación de respuestas */
+    .opt-correct {
+      background-color: var(--correct-green) !important;
+      color: #fff !important;
+      transform: scale(1.03) !important;
+      box-shadow: 0px 0px 15px var(--correct-green) !important;
+    }
+
+    .opt-incorrect {
+      background-color: var(--incorrect-red) !important;
+      color: #fff !important;
+      box-shadow: 0px 0px 10px var(--incorrect-red) !important;
+    }
+
+    /* Estilos para imágenes de personajes en botones de opción */
+    .character-option-img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #000;
+      object-fit: cover;
+      background-color: #fff;
+      flex-shrink: 0;
+    }
+
+    .character-name {
+      font-weight: 800;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    /* Ajustes responsivos para imágenes */
+    @media (max-width: 576px) {
+      .character-option-img {
+        width: 40px;
+        height: 40px;
+      }
+      .character-name {
+        font-size: 0.9rem;
+      }
+      .comic-btn-choice {
+        font-size: 0.95rem;
+        padding: 12px;
+      }
+      .chalkboard-title {
+        font-size: 0.9rem;
+      }
+      .chalkboard-body {
+        padding: 20px 15px;
+        min-height: 120px;
+      }
+      .game-title {
+        font-size: 2rem !important;
+      }
+      .mode-option {
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (min-width: 577px) and (max-width: 768px) {
+      .character-option-img {
+        width: 45px;
+        height: 45px;
+      }
+      .character-name {
+        font-size: 0.95rem;
+      }
+      .comic-btn-choice {
+        font-size: 1rem;
+        padding: 14px;
+      }
+      .game-title {
+        font-size: 2.5rem !important;
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 992px) {
+      .character-option-img {
+        width: 48px;
+        height: 48px;
+      }
+      .character-name {
+        font-size: 1rem;
+      }
+    }
+
+    /* Ajustes para pantallas muy pequeñas */
+    @media (max-width: 400px) {
+      .character-option-img {
+        width: 35px;
+        height: 35px;
+      }
+      .character-name {
+        font-size: 0.85rem;
+      }
+      .comic-btn-choice {
+        font-size: 0.85rem;
+        padding: 10px;
+      }
+      .chalkboard-title {
+        font-size: 0.8rem;
+      }
+      .game-title {
+        font-size: 1.5rem !important;
+      }
+    }
+
+    /* ==========================================================
+       5. PIZARRA DE TIZAS (CHALKBOARD)
+       ========================================================== */
+    .chalkboard-container {
+      border: 8px solid #703D1B; /* Madera */
+      border-radius: 8px;
+      background-color: #233c2e; /* Verde tiza oscuro */
+      box-shadow: 6px 6px 0px var(--border-color);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .chalkboard-header {
+      background-color: #17281f;
+      padding: 6px 12px;
+      border-bottom: 3px solid var(--border-color);
+      text-align: center;
+    }
+
+    .chalkboard-title {
+      color: #799a86;
+      font-family: 'Luckiest Guy', cursive;
+      font-size: 1.05rem;
+      letter-spacing: 1px;
+    }
+
+    .chalkboard-body {
+      padding: 25px 20px;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background-image: radial-gradient(rgba(255,255,255,0.03) 15%, transparent 15%);
+      background-size: 4px 4px;
+    }
+
+    #quote-text {
+      font-family: 'Gochi Hand', cursive;
+      font-size: 1.8rem;
+      color: #f0f0f0;
+      margin: 0;
+      line-height: 1.4;
+      text-shadow: 1px 1px 1px rgba(0,0,0,0.8);
+      word-wrap: break-word;
+    }
+
+    /* ==========================================================
+       6. TIMERS, BARRAS DE PROGRESO Y SELECCIÓN DE MODO
+       ========================================================== */
+    .comic-progress {
+      height: 20px;
+      background-color: #ffffff;
+      border: 3px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 2px 2px 0px var(--border-color);
+    }
+
+    body.dark-mode .comic-progress {
+      background-color: #334155;
+    }
+
+    .progress-bar {
+      transition: width 0.1s linear, background-color 0.3s ease;
+    }
+
+    .bg-success-comic { background-color: var(--simpsons-green) !important; }
+    .bg-warning-comic { background-color: var(--simpsons-orange) !important; }
+    .bg-danger-comic { background-color: var(--simpsons-pink) !important; }
+
+    /* Modos de Juego */
+    .mode-option {
+      background-color: #ffffff;
+      border: 3px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .mode-option:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0px var(--border-color);
+    }
+
+    .mode-option.active {
+      background-color: var(--simpsons-yellow);
+      box-shadow: 4px 4px 0px var(--border-color);
+      transform: translate(-2px, -2px);
+    }
+
+    body.dark-mode .mode-option {
+      background-color: #334155;
+      color: #e2e8f0;
+    }
+
+    body.dark-mode .mode-option.active {
+      background-color: var(--simpsons-orange);
+      color: #000000;
+    }
+
+    /* ==========================================================
+       7. ANIMACIONES Y DECORACIONES (ALERTAS, CONFETTI)
+       ========================================================== */
+    .comic-alert {
+      border: 3px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+      font-weight: 800;
+      box-shadow: 4px 4px 0px var(--border-color);
+    }
+
+    .alert-correct { background-color: #d4edda; color: #155724; border-color: var(--border-color); }
+    .alert-incorrect { background-color: #f8d7da; color: #721c24; border-color: var(--border-color); }
+    .alert-timeout { background-color: #fff3cd; color: #856404; border-color: var(--border-color); }
+
+    /* Animación de vibración para respuestas erróneas */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+      20%, 40%, 60%, 80% { transform: translateX(6px); }
+    }
+
+    .shake-card {
+      animation: shake 0.5s ease-in-out;
+    }
+
+    /* Insignia del rango de personaje */
+    .character-rank-card {
+      border: 4px solid var(--border-color);
+      border-radius: 15px;
+      background-color: #f8fafc;
+      box-shadow: 6px 6px 0px var(--border-color);
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark-mode .character-rank-card {
+      background-color: #334155;
+    }
+
+    .rank-avatar-container {
+      width: 60px;
+      height: 60px;
+      background-color: var(--simpsons-yellow);
+      border: 3px solid #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 3px 3px 0px #000;
+    }
+
+    /* Colores base para temas especiales */
+    .bg-yellow-comic { background-color: #fef08a !important; color: #000000; }
+    .bg-blue-comic { background-color: var(--simpsons-blue) !important; }
+    .bg-green-comic { background-color: var(--simpsons-green) !important; }
+    .bg-light-comic { background-color: #f1f5f9 !important; }
+
+    /* Animación del cargador Donut */
+    .donut-loader {
+      animation: spinDonut 1.5s linear infinite;
+    }
+
+    @keyframes spinDonut {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .high-score-badge {
+      font-weight: 800;
+      font-size: 0.95rem;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      padding: 4px 10px;
+      background-color: #fff;
+      color: #000;
+      box-shadow: 3px 3px 0px var(--border-color);
+    }
+
+    body.dark-mode .high-score-badge {
+      background-color: #1e293b;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nubes de fondo estilo Springfield -->
+  <div class="sky-background" id="sky-bg">
+    <!-- Nubes SVG dinámicas -->
+    <svg class="cloud cloud-1" viewBox="0 0 100 62" width="130" height="80">
+      <path d="M 17,40 a 15,15 0 0,1 12,-12 a 22,22 0 0,1 35,-1 a 17,17 0 0,1 18,13 a 12,12 0 0,1 -2,22 l -63,0 a 11,11 0 0,1 0,-22 z" fill="white" stroke="black" stroke-width="4"/>
+    </svg>
+    <svg class="cloud cloud-2" viewBox="0 0 100 62" width="160" height="100">
+      <path d="M 17,40 a 15,15 0 0,1 12,-12 a 22,22 0 0,1 35,-1 a 17,17 0 0,1 18,13 a 12,12 0 0,1 -2,22 l -63,0 a 11,11 0 0,1 0,-22 z" fill="white" stroke="black" stroke-width="4"/>
+    </svg>
+    <svg class="cloud cloud-3" viewBox="0 0 100 62" width="120" height="75">
+      <path d="M 17,40 a 15,15 0 0,1 12,-12 a 22,22 0 0,1 35,-1 a 17,17 0 0,1 18,13 a 12,12 0 0,1 -2,22 l -63,0 a 11,11 0 0,1 0,-22 z" fill="white" stroke="black" stroke-width="4"/>
+    </svg>
+    <svg class="cloud cloud-4" viewBox="0 0 100 62" width="140" height="85">
+      <path d="M 17,40 a 15,15 0 0,1 12,-12 a 22,22 0 0,1 35,-1 a 17,17 0 0,1 18,13 a 12,12 0 0,1 -2,22 l -63,0 a 11,11 0 0,1 0,-22 z" fill="white" stroke="black" stroke-width="4"/>
+    </svg>
+  </div>
+
+  <div class="container py-4">
+    <!-- Barra superior de configuración -->
+    <div class="d-flex justify-content-between align-items-center mb-4 comic-nav">
+      <div class="d-flex gap-2">
+        <button id="lang-btn" class="btn comic-btn-sm bg-light-comic text-dark">
+          <i class="bi bi-translate me-1"></i><span id="lang-label">ES</span>
+        </button>
+        <button id="sound-btn" class="btn comic-btn-sm bg-light-comic text-dark">
+          <i id="sound-icon" class="bi bi-volume-up-fill"></i>
+        </button>
+        <button id="theme-btn" class="btn comic-btn-sm bg-light-comic text-dark">
+          <i id="theme-icon" class="bi bi-moon-fill"></i>
+        </button>
+      </div>
+      <div class="high-score-badge">
+        <i class="bi bi-trophy-fill text-warning me-1"></i>
+        <span data-es="Récord: " data-en="High Score: ">Récord: </span><span id="nav-high-score">0</span>
+      </div>
+    </div>
+
+    <!-- Arena central de juego -->
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-7">
+        
+        <!-- ==========================================
+             PANTALLA DE INICIO (WELCOME SCREEN)
+             ========================================== -->
+        <div id="screen-welcome" class="comic-card bg-yellow-comic p-4 text-center">
+          <h1 class="simpsons-title">Simpsons</h1>
+          <h2 class="simpsons-subtitle mb-4">Quotes Battle</h2>
+          
+          <p class="fs-5 fw-bold mb-4" data-es="¿Podrás adivinar quién dijo cada frase de Springfield?" data-en="Can you guess who said each Springfield quote?">
+            ¿Podrás adivinar quién dijo cada frase de Springfield?
+          </p>
+
+          <!-- Modos de Juego -->
+          <div class="mb-4 text-start">
+            <label class="form-label fw-bold mb-2 text-dark" data-es="Selecciona Modo de Juego:" data-en="Select Game Mode:">Selecciona Modo de Juego:</label>
+            <div class="d-flex flex-column gap-3">
+              <!-- Clásico -->
+              <div class="mode-option active" id="mode-classic" onclick="setGameMode('classic')" role="button" tabindex="0" aria-pressed="true" aria-label="Modo Clásico: 10 preguntas para demostrar tus conocimientos">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="fw-bold fs-5"><i class="bi bi-play-circle-fill me-2 text-primary" aria-hidden="true"></i><span data-es="Clásico" data-en="Classic">Clásico</span></span>
+                  <span class="badge bg-dark rounded-pill" data-es="10 Frases" data-en="10 Quotes">10 Frases</span>
+                </div>
+                <p class="small m-0 mt-1 text-secondary" data-es="10 preguntas para demostrar tus conocimientos. Consigue bonus por contestar rápido." data-en="10 questions to prove your knowledge. Get speed bonuses for quick answers.">
+                  10 preguntas para demostrar tus conocimientos. Consigue bonus por contestar rápido.
+                </p>
+              </div>
+              
+              <!-- Supervivencia -->
+              <div class="mode-option" id="mode-survival" onclick="setGameMode('survival')" role="button" tabindex="0" aria-pressed="false" aria-label="Modo Supervivencia: Una sola respuesta incorrecta y estás fuera">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="fw-bold fs-5"><i class="bi bi-heart-fill me-2 text-danger" aria-hidden="true"></i><span data-es="Supervivencia" data-en="Survival">Supervivencia</span></span>
+                  <span class="badge bg-dark rounded-pill" data-es="Muerte Súbita" data-en="Sudden Death">Muerte Súbita</span>
+                </div>
+                <p class="small m-0 mt-1 text-secondary" data-es="¡Una sola respuesta incorrecta y estás fuera! El reloj se acelera tras cada acierto." data-en="One single wrong answer and you are out! The clock ticks faster after each correct guess.">
+                  ¡Una sola respuesta incorrecta y estás fuera! El reloj se acelera tras cada acierto.
+                </p>
+              </div>
+
+              <!-- Contra Reloj -->
+              <div class="mode-option" id="mode-time-rush" onclick="setGameMode('time-rush')" role="button" tabindex="0" aria-pressed="false" aria-label="Modo Contra Reloj: Consigue todo el tiempo que puedas. +3s por acierto, -5s por fallo">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="fw-bold fs-5"><i class="bi bi-stopwatch-fill me-2 text-warning" aria-hidden="true"></i><span data-es="Contra Reloj" data-en="Time Rush">Contra Reloj</span></span>
+                  <span class="badge bg-dark rounded-pill" data-es="30s Iniciales" data-en="30s Start">30s Iniciales</span>
+                </div>
+                <p class="small m-0 mt-1 text-secondary" data-es="Consigue todo el tiempo que puedas. +3s por acierto, -5s por fallo." data-en="Gain as much time as possible. +3s for correct hits, -5s for mistakes.">
+                  Consigue todo el tiempo que puedas. +3s por acierto, -5s por fallo.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button id="start-game-btn" class="btn comic-btn w-100 py-3 bg-blue-comic text-white btn-lg mt-2">
+            <span data-es="¡INICIAR DUELO!" data-en="START DUEL!">¡INICIAR DUELO!</span> <i class="bi bi-zap-charge ms-1"></i>
+          </button>
+        </div>
+
+        <!-- ==========================================
+             PANTALLA DE CARGA (LOADING SCREEN)
+             ========================================== -->
+        <div id="screen-loading" class="comic-card bg-yellow-comic p-5 text-center d-none">
+          <h3 class="comic-header mb-4" id="loading-text" data-es="Conectando con Springfield..." data-en="Connecting with Springfield...">Conectando con Springfield...</h3>
+          
+          <!-- Cargador Rosquilla (Donut) -->
+          <div class="d-flex justify-content-center my-4">
+            <svg class="donut-loader" width="110" height="110" viewBox="0 0 100 100">
+              <!-- Cuerpo de rosquilla -->
+              <circle cx="50" cy="50" r="35" fill="none" stroke="#dcb484" stroke-width="20" />
+              <!-- Glaseado rosa -->
+              <circle cx="50" cy="50" r="35" fill="none" stroke="#f06292" stroke-width="16" stroke-dasharray="170 50" stroke-linecap="round" />
+              <!-- Virutas de colores -->
+              <circle cx="50" cy="50" r="35" fill="none" stroke="#ffeb3b" stroke-width="3" stroke-dasharray="2 18 4 16" stroke-linecap="round" />
+              <circle cx="50" cy="50" r="35" fill="none" stroke="#26c6da" stroke-width="3" stroke-dasharray="3 15 2 20" stroke-linecap="round" transform="rotate(45 50 50)" />
+              <circle cx="50" cy="50" r="35" fill="none" stroke="#ffffff" stroke-width="3" stroke-dasharray="1 19 3 17" stroke-linecap="round" transform="rotate(90 50 50)" />
+              <!-- Agujero central -->
+              <circle cx="50" cy="50" r="15" fill="#fef08a" id="donut-hole-mask" />
+            </svg>
+          </div>
+          <p class="small text-dark fw-bold" id="loading-sub" data-es="Realizando peticiones a la API..." data-en="Making requests to the API...">
+            Realizando peticiones a la API...
+          </p>
+        </div>
+
+        <!-- ==========================================
+             PANTALLA DE JUEGO (GAME ARENA SCREEN)
+             ========================================== -->
+        <div id="screen-game" class="comic-card bg-yellow-comic p-4 d-none">
+          <!-- Datos de progreso / Puntos -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span id="game-progress-label" class="badge bg-dark py-2 px-3 fs-6">Pregunta 1/10</span>
+            <span id="game-score-label" class="badge bg-blue-comic text-white py-2 px-3 fs-6">Score: 0</span>
+          </div>
+
+          <!-- Barra de Tiempo -->
+          <div class="timer-container mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="small fw-bold text-dark"><i class="bi bi-clock-fill me-1"></i><span data-es="Tiempo Restante" data-en="Time Remaining">Tiempo Restante</span></span>
+              <span id="timer-text" class="small fw-bold text-dark">10.0s</span>
+            </div>
+            <div class="progress comic-progress">
+              <div id="timer-progress" class="progress-bar bg-success-comic" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+
+          <!-- Pizarra de Frases -->
+          <div id="trivia-card" class="chalkboard-container mb-4">
+            <div class="chalkboard-header">
+              <span class="chalkboard-title" data-es="¿Quién es el autor de esta frase?" data-en="Who is the author of this quote?">¿Quién es el autor de esta frase?</span>
+            </div>
+            <div class="chalkboard-body">
+              <p id="quote-text">"A la grande le puse Cuca."</p>
+            </div>
+          </div>
+
+          <!-- Contenedor dinámico de opciones -->
+          <div class="row g-3" id="options-grid">
+            <!-- Botones inyectados dinámicamente por JS -->
+          </div>
+
+          <!-- Panel de Retroalimentación y Botón Siguiente -->
+          <div class="mt-4 text-center">
+            <div id="feedback-panel" class="mb-3 d-none">
+              <div id="feedback-alert" class="comic-alert">
+                <span id="feedback-message">¡Excelente!</span>
+              </div>
+            </div>
+            <button id="next-btn" class="btn comic-btn bg-green-comic text-white w-100 py-3 d-none">
+              <span id="next-btn-text" data-es="Siguiente" data-en="Next">Siguiente</span> <i class="bi bi-arrow-right-short fs-4 align-middle"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- ==========================================
+             PANTALLA FINAL (GAME OVER SCREEN)
+             ========================================== -->
+        <div id="screen-gameover" class="comic-card bg-yellow-comic p-4 text-center d-none">
+          <h1 class="simpsons-title mb-2">¡D'OH!</h1>
+          <h3 class="mb-4" id="gameover-title" data-es="Fin de la Partida" data-en="Game Over">Fin de la Partida</h3>
+
+          <!-- Tabla de Resultados -->
+          <div class="comic-inner-card bg-white p-3 mb-4">
+            <div class="row">
+              <div class="col-6 border-end border-dark">
+                <h6 class="text-muted fw-bold" data-es="Tu Puntuación" data-en="Your Score">Tu Puntuación</h6>
+                <h2 class="fw-extrabold m-0" id="final-score">0</h2>
+              </div>
+              <div class="col-6">
+                <h6 class="text-muted fw-bold" data-es="Récord de Modo" data-en="Mode High Score">Récord de Modo</h6>
+                <h2 class="fw-extrabold m-0" id="result-high-score">0</h2>
+              </div>
+            </div>
+            <div class="mt-3 pt-2 border-top border-dark-subtle" id="stats-breakdown">
+              <p class="m-0 small text-muted" id="stat-accuracy">Aciertos: 0/10 (0%)</p>
+            </div>
+          </div>
+
+          <!-- Rango del personaje -->
+          <div class="character-rank-card mb-4 p-3 d-flex align-items-center gap-3 text-start">
+            <div class="rank-avatar-container text-center">
+              <span id="rank-avatar" class="fs-2">🍩</span>
+            </div>
+            <div>
+              <h5 class="m-0 fw-bold" id="rank-tier">Rango: Homer Simpson</h5>
+              <p class="m-0 small text-muted" id="rank-desc">...</p>
+            </div>
+          </div>
+
+          <!-- Botones de Reintento -->
+          <div class="d-flex gap-2">
+            <button id="retry-btn" class="btn comic-btn bg-blue-comic text-white flex-grow-1 py-3">
+              <i class="bi bi-arrow-repeat me-1"></i> <span data-es="Jugar Otra Vez" data-en="Play Again">Jugar Otra Vez</span>
+            </button>
+            <button id="menu-btn" class="btn comic-btn bg-light-comic text-dark px-4">
+              <i class="bi bi-house-door-fill fs-5"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       LÓGICA JAVASCRIPT DETALLADA
+       ========================================== -->
+  <script>
+    /* ==========================================================
+       1. BASE DE DATOS DE FRASES (ESPAÑOL E INGLÉS)
+       ========================================================== */
+    const SIMPSONS_QUOTES = [
+      {
+        quote: {
+          es: "¡Ouch! / ¡D'oh!",
+          en: "D'oh!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "A la grande le puse Cuca.",
+          en: "I call the big one Bitey."
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "Tendrá todo el dinero del mundo, pero hay algo que jamás podrá comprar... un dinosaurio.",
+          en: "He may have all the money in the world, but there's one thing he can't buy... a dinosaur."
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "¡Hola, holita, vecinillo!",
+          en: "Hi diddly ho, neighborino!"
+        },
+        character: "Ned Flanders"
+      },
+      {
+        quote: {
+          es: "¡Multiplícate por cero!",
+          en: "Eat my shorts!"
+        },
+        character: "Bart Simpson"
+      },
+      {
+        quote: {
+          es: "¡Yo no fui!",
+          en: "I didn't do it!"
+        },
+        character: "Bart Simpson"
+      },
+      {
+        quote: {
+          es: "¡Es mejor callar y pasar por tonto que abrir la boca y despejar las dudas!",
+          en: "It is better to remain silent and be thought a fool than to open one's mouth and remove all doubt."
+        },
+        character: "Lisa Simpson"
+      },
+      {
+        quote: {
+          es: "¡Excelente!",
+          en: "Excellent!"
+        },
+        character: "Mr. Burns"
+      },
+      {
+        quote: {
+          es: "Suelte a los sabuesos.",
+          en: "Release the hounds."
+        },
+        character: "Mr. Burns"
+      },
+      {
+        quote: {
+          es: "¡El aliento de mi gato huele a comida de gato!",
+          en: "My cat's breath smells like cat food."
+        },
+        character: "Ralph Wiggum"
+      },
+      {
+        quote: {
+          es: "¡No lloren por mí, ya estoy muerto!",
+          en: "Don't cry for me, I'm already dead."
+        },
+        character: "Barney Gumble"
+      },
+      {
+        quote: {
+          es: "El peor. Episodio. De la historia.",
+          en: "Worst. Episode. Ever."
+        },
+        character: "Comic Book Guy"
+      },
+      {
+        quote: {
+          es: "No te lo voy a negar, soy un tipo solitario.",
+          en: "I'm a well-wisher, in that I wish you no specific harm."
+        },
+        character: "Moe Szyslak"
+      },
+      {
+        quote: {
+          es: "¡Alto en nombre de la ley! Oh, olvidenlo, ya cruzó la frontera estatal.",
+          en: "Stop in the name of the law! Oh, forget it, he's crossed the state line."
+        },
+        character: "Chief Wiggum"
+      },
+      {
+        quote: {
+          es: "Normalmente no rezo, pero si estás ahí arriba, ¡sálvame, Superman!",
+          en: "I'm normally not a praying man, but if you're up there, please save me Superman!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "Intentar algo es el primer paso hacia el fracaso.",
+          en: "Trying is the first step towards failure."
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "Yo estaba en la onda, pero luego cambiaron la onda y ahora la onda que tengo no es la onda, y la onda de ahora me parece mala onda.",
+          en: "I used to be with 'it', but then they changed what 'it' was. Now what I'm with isn't 'it' anymore and what's 'it' seems weird and scary."
+        },
+        character: "Grampa Simpson"
+      },
+      {
+        quote: {
+          es: "¡Cállate, cerebro, o te apuñalo con un hisopo!",
+          en: "Shut up, brain, or I'll stab you with a Q-tip!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "¡Hable más fuerte que tengo una toalla!",
+          en: "Speak up, I'm wearing a towel!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "¡Por el alcohol! La causa y solución de todos los problemas de la vida.",
+          en: "To alcohol! The cause of, and solution to, all of life's problems."
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "¡Estúpido y sensual Flanders!",
+          en: "Stupid sexy Flanders!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "Si alguien me necesita, estaré en mi habitación.",
+          en: "If anyone wants me, I'll be in my room."
+        },
+        character: "Lisa Simpson"
+      },
+      {
+        quote: {
+          es: "¡Mi gato se llama Guantes!",
+          en: "My cat's name is Mittens!"
+        },
+        character: "Ralph Wiggum"
+      },
+      {
+        quote: {
+          es: "¡Estoy en peligro!",
+          en: "I'm in danger."
+        },
+        character: "Ralph Wiggum"
+      },
+      {
+        quote: {
+          es: "No te prometo que lo intentaré, pero intentaré intentar.",
+          en: "I can't promise I'll try, but I'll try to try."
+        },
+        character: "Bart Simpson"
+      },
+      {
+        quote: {
+          es: "¡Perfectirijillo!",
+          en: "Okily-dokily!"
+        },
+        character: "Ned Flanders"
+      },
+      {
+        quote: {
+          es: "¡EXCELENTE!",
+          en: "EXCELLENT!"
+        },
+        character: "Mr. Burns"
+      },
+      {
+        quote: {
+          es: "¡Mi aliento huele a cerveza!",
+          en: "My breath smells like beer!"
+        },
+        character: "Barney Gumble"
+      },
+      {
+        quote: {
+          es: "¡Diga lo que quiera de mí, pero no ofenda a la comida!",
+          en: "Say what you want about me, but don't offend food!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "¡Yo no fui, lo juro!",
+          en: "I didn't do it, I swear!"
+        },
+        character: "Bart Simpson"
+      },
+      {
+        quote: {
+          es: "¡Qué elegancia la de Francia!",
+          en: "Oh, how elegant, like France!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "Ustedes tienen las respuestas, yo tengo las preguntas.",
+          en: "You have the answers, I have the questions."
+        },
+        character: "Alex Trebek"
+      },
+      {
+        quote: {
+          es: "¡Sálvame, Jebús!",
+          en: "Save me, Jebus!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "Marge, creo que odio a Michael Jackson.",
+          en: "Marge, I think I hate Michael Jackson."
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "¡Me aburro!",
+          en: "I'm bored!"
+        },
+        character: "Bart Simpson"
+      },
+      {
+        quote: {
+          es: "¡Usted es diabólico, señor Burns!",
+          en: "You are devilish, Mr. Burns!"
+        },
+        character: "Homer Simpson"
+      },
+      {
+        quote: {
+          es: "No llore, señor Burns, su coche no vale tanto.",
+          en: "Don't cry, Mr. Burns, your car isn't worth that much."
+        },
+        character: "Smithers"
+      },
+      {
+        quote: {
+          es: "¡Ay, caramba!",
+          en: "Ay, caramba!"
+        },
+        character: "Bart Simpson"
+      },
+      {
+        quote: {
+          es: "¡Que la fuerza te acompañe! - ¿No es de Star Trek?",
+          en: "May the Force be with you! - Isn't that from Star Trek?"
+        },
+        character: "Comic Book Guy"
+      },
+      {
+        quote: {
+          es: "Hola, soy Troy McClure. Tal vez me recuerden de películas como...",
+          en: "Hi, I'm Troy McClure. You may remember me from such films as..."
+        },
+        character: "Troy McClure"
+      }
+    ];
+
+    /* Emojis para la pantalla final según personaje */
+    const CHARACTER_EMOJIS = {
+      "homer": "🍩",
+      "bart": "🛹",
+      "lisa": "🎷",
+      "marge": "🥦",
+      "burns": "☢️",
+      "flanders": "👨‍🦰",
+      "moe": "🍺",
+      "krusty": "🤡",
+      "barney": "🍷",
+      "ralph": "🖍️",
+      "comic": "💻",
+      "wiggum": "👮",
+      "milhouse": "👓",
+      "skinner": "🎒",
+      "apu": "🛒",
+      "nelson": "👊",
+      "smithers": "💼",
+      "grampa": "👴",
+      "troy": "🎬"
+    };
+
+    /* ==========================================================
+       2. REPRODUCTOR DE SONIDOS RETRO (WEB AUDIO API SYNTH)
+       ========================================================== */
+    class RetroSoundManager {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        // Inicializa el AudioContext de forma diferida en respuesta a una acción del usuario
+        if (!this.ctx) {
+          this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        const icon = document.getElementById('sound-icon');
+        if (this.enabled) {
+          icon.className = 'bi bi-volume-up-fill';
+          this.init();
+        } else {
+          icon.className = 'bi bi-volume-mute-fill';
+        }
+      }
+
+      playCorrect() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'triangle';
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        const now = this.ctx.currentTime;
+        // Arpegio optimista rápido (Mi5 -> Sol5 -> Do6)
+        osc.frequency.setValueAtTime(659.25, now); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.08); // G5
+        osc.frequency.setValueAtTime(1046.50, now + 0.16); // C6
+        
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+        
+        osc.start(now);
+        osc.stop(now + 0.4);
+      }
+
+      playWrong() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'sawtooth';
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        const now = this.ctx.currentTime;
+        // Sonido descendente áspero (200Hz -> 100Hz)
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.linearRampToValueAtTime(100, now + 0.35);
+        
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+        
+        osc.start(now);
+        osc.stop(now + 0.35);
+      }
+
+      playTick() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        
+        osc.type = 'sine';
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        const now = this.ctx.currentTime;
+        osc.frequency.setValueAtTime(1000, now);
+        
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.linearRampToValueAtTime(0.001, now + 0.05);
+        
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+
+      playVictory() {
+        if (!this.enabled) return;
+        this.init();
+        const now = this.ctx.currentTime;
+        
+        const playTone = (freq, start, duration, type = 'square') => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.08, start);
+          gain.gain.linearRampToValueAtTime(0.005, start + duration);
+          osc.start(start);
+          osc.stop(start + duration);
+        };
+        
+        // Tonos triunfales inspirados en el tema principal de Los Simpsons
+        playTone(523.25, now, 0.15); // C5
+        playTone(659.25, now + 0.15, 0.15); // E5
+        playTone(783.99, now + 0.30, 0.15); // G5
+        playTone(880.00, now + 0.45, 0.15); // A5
+        playTone(783.99, now + 0.60, 0.25); // G5
+        playTone(1046.50, now + 0.85, 0.5); // C6
+      }
+    }
+
+    const soundManager = new RetroSoundManager();
+
+    /* ==========================================================
+       3. ESTADO GLOBAL DE LA APLICACIÓN
+       ========================================================== */
+    const characterPool = []; // Piscina global de personajes
+    const characterImages = {}; // Mapa de nombre → URL de imagen
+    let gameLanguage = 'es'; // Idioma activo de la interfaz y las frases
+    let currentMode = 'classic'; // Modo: 'classic', 'survival', 'time-rush'
+    
+    // Variables de control de ronda
+    let gameScore = 0;
+    let classicIndex = 0; // Índice de pregunta para el modo clásico (1 a 10)
+    let questionsAnswered = 0; // Preguntas jugadas en la partida actual
+    let correctCount = 0; // Total de aciertos
+    let livesRemaining = 1; // Para el modo Supervivencia (1 vida)
+    let activeQuestionList = []; // Copia barajada de frases para jugar en la ronda
+    let currentQuestion = null; // Frase activa
+    
+    // Configuración del Timer
+    let timerInterval = null;
+    let timeRemaining = 10.0;
+    let baseTimeLimit = 10.0; // Cambia dinámicamente en Supervivencia
+
+    /* ==========================================================
+       4. LOGICA DE API Y CARGA DE DATOS (ASYNC/AWAIT & FALLBACKS)
+       ========================================================= */
+    async function loadInitialData() {
+      showScreen('screen-loading');
+      updateLoadingStatus("Conectando con la API de Springfield...", "Realizando peticiones HTTP...");
+
+      let primarySuccess = false;
+      const imageApiUrl = 'https://thesimpsonsapi.com/api/characters'; // API con imágenes
+      const primaryUrl = 'https://thesimpsonsapi.up.railway.app/characters'; // Se intenta aunque esté inactiva
+      const backupUrl = 'https://api.sampleapis.com/simpsons/characters';
+
+      // 1. Intento con la API de Imágenes (prioridad)
+      try {
+        console.log("Intentando obtener personajes con imágenes de la API:", imageApiUrl);
+        await fetchCharacterImages(imageApiUrl);
+        if (Object.keys(characterImages).length >= 10) {
+          primarySuccess = true;
+          console.log("Imágenes cargadas con éxito desde la API de imágenes.");
+        }
+      } catch (err) {
+        console.warn("Fallo al conectar con la API de imágenes. Error:", err.message);
+      }
+
+      // 2. Intento con la API Primaria (solo nombres)
+      if (!primarySuccess) {
+        try {
+          console.log("Intentando obtener personajes de la API principal:", primaryUrl);
+          const response = await fetch(primaryUrl);
+          if (!response.ok) throw new Error(`HTTP error. Code: ${response.status}`);
+          const data = await response.json();
+          
+          if (Array.isArray(data)) {
+            processRawNames(data.map(c => c.name || c.nombre));
+            if (characterPool.length >= 10) {
+              primarySuccess = true;
+              console.log("Cargado con éxito desde la API primaria.");
+            }
+          }
+        } catch (err) {
+          console.warn("Fallo al conectar con la API primaria. Activando plan de respaldo. Error:", err.message);
+        }
+      }
+
+      // 3. Intento de respaldo con la API Secundaria (SampleAPIs)
+      if (!primarySuccess) {
+        updateLoadingStatus("API primaria no disponible.", "Intentando conectar con base de datos alternativa (SampleAPIs)...");
+        try {
+          console.log("Intentando obtener personajes de la API secundaria:", backupUrl);
+          const response = await fetch(backupUrl);
+          if (!response.ok) throw new Error(`HTTP error. Code: ${response.status}`);
+          const data = await response.json();
+          
+          if (Array.isArray(data)) {
+            // Se limpian nombres indeseados o vacíos
+            const namesList = data
+              .map(c => c.name)
+              .filter(name => name && name.trim().length > 2 && !name.includes('#') && !name.toLowerCase().includes('voice'));
+            
+            processRawNames(namesList);
+            console.log("Cargado desde la API secundaria de respaldo.");
+          }
+        } catch (err) {
+          console.error("Fallo completo en ambas APIs externas. Cargando lista local robusta. Error:", err.message);
+        }
+      }
+
+      // 4. Cargar nombres por defecto (Fallback total offline) para asegurar que tengamos personajes conocidos
+      const fallbackCharacters = [
+        "Homer Simpson", "Marge Simpson", "Bart Simpson", "Lisa Simpson", "Maggie Simpson",
+        "Ned Flanders", "Mr. Burns", "Moe Szyslak", "Chief Wiggum", "Krusty the Clown",
+        "Milhouse Van Houten", "Seymour Skinner", "Apu Nahasapeemapetilon", "Nelson Muntz",
+        "Barney Gumble", "Ralph Wiggum", "Waylon Smithers", "Comic Book Guy", "Lenny Leonard",
+        "Carl Carlson", "Grampa Simpson", "Troy McClure", "Selma Bouvier", "Patty Bouvier"
+      ];
+
+      fallbackCharacters.forEach(name => {
+        const normalized = normalizeCharacterName(name);
+        if (!characterPool.includes(normalized)) {
+          characterPool.push(normalized);
+        }
+      });
+
+      console.log(`Pool de personajes cargado. Total únicos: ${characterPool.length}`, characterPool);
+      console.log(`Imágenes cargadas: ${Object.keys(characterImages).length}`, characterImages);
+      
+      // Inicializar interfaces
+      loadHighScores();
+      showScreen('screen-welcome');
+    }
+
+    // Obtiene imágenes de personajes de la API con paginación
+    async function fetchCharacterImages(baseUrl) {
+      let page = 1;
+      let totalPages = 1;
+      
+      // Limitar a las primeras 5 páginas (100 personajes) para no sobrecargar
+      while (page <= Math.min(totalPages, 5)) {
+        try {
+          const response = await fetch(`${baseUrl}?page=${page}`);
+          if (!response.ok) throw new Error(`HTTP error. Code: ${response.status}`);
+          const data = await response.json();
+          
+          if (data.results && Array.isArray(data.results)) {
+            totalPages = data.pages || 1;
+            
+            data.results.forEach(character => {
+              if (character.name && character.portrait_path) {
+                const normalizedName = normalizeCharacterName(character.name);
+                // Construir URL completa de la imagen (CDN requiere prefijo /200/)
+                const imageUrl = `https://cdn.thesimpsonsapi.com/200${character.portrait_path}`;
+                characterImages[normalizedName] = imageUrl;
+                
+                // También añadir el nombre al pool si no existe
+                if (!characterPool.includes(normalizedName)) {
+                  characterPool.push(normalizedName);
+                }
+              }
+            });
+          }
+          page++;
+        } catch (err) {
+          console.warn(`Error al cargar página ${page}:`, err.message);
+          break;
+        }
+      }
+    }
+
+    // Obtiene la URL de imagen de un personaje
+    function getCharacterImageUrl(characterName) {
+      const normalizedName = normalizeCharacterName(characterName);
+      return characterImages[normalizedName] || null;
+    }
+
+    // Procesa nombres crudos, los normaliza y los añade a la piscina única
+    function processRawNames(namesArray) {
+      namesArray.forEach(name => {
+        if (!name) return;
+        const normalized = normalizeCharacterName(name);
+        if (normalized.length > 2 && !characterPool.includes(normalized)) {
+          characterPool.push(normalized);
+        }
+      });
+    }
+
+    // Normaliza algunos nombres comunes devueltos de forma extraña por las APIs
+    function normalizeCharacterName(name) {
+      let clean = name.trim();
+      // Elimina corchetes u otras anotaciones
+      clean = clean.replace(/\[.*?\]/g, '').trim();
+      
+      // Ajustes específicos de nombres conocidos para consistencia de la trivia
+      if (clean === "C. Montgomery Burns") return "Mr. Burns";
+      if (clean === "Homer Simpson (voice)") return "Homer Simpson";
+      if (clean === "Bart Simpson (voice)") return "Bart Simpson";
+      if (clean === "Abraham Simpson" || clean === "Grampa Simpson (voice)") return "Grampa Simpson";
+      
+      return clean;
+    }
+
+    /* ==========================================================
+       5. CONTROL DEL FLUJO DE JUEGO (GAMEPLAY LOOP)
+       ========================================================== */
+    function setGameMode(mode) {
+      currentMode = mode;
+      
+      // Cambia la clase visual de active en las tarjetas de modo
+      document.querySelectorAll('.mode-option').forEach(el => {
+        el.classList.remove('active');
+        el.setAttribute('aria-pressed', 'false');
+      });
+      document.getElementById(`mode-${mode}`).classList.add('active');
+      document.getElementById(`mode-${mode}`).setAttribute('aria-pressed', 'true');
+    }
+
+    function startNewGame() {
+      soundManager.init(); // Inicializa el contexto de sonido
+      
+      // Reinicio de estados del juego
+      gameScore = 0;
+      classicIndex = 1;
+      questionsAnswered = 0;
+      correctCount = 0;
+      baseTimeLimit = 10.0;
+      livesRemaining = (currentMode === 'survival') ? 1 : 999; // 1 sola vida en Supervivencia
+
+      // Si es Contra Reloj, iniciamos con 30 segundos en vez de 10
+      if (currentMode === 'time-rush') {
+        timeRemaining = 30.0;
+      } else {
+        timeRemaining = 10.0;
+      }
+
+      // Barajar el mazo completo de frases locales
+      activeQuestionList = shuffleArray([...SIMPSONS_QUOTES]);
+      
+      // Render inicial del marcador
+      updateScoreUI();
+      
+      // Carga la primera pregunta
+      getNewQuestion();
+      showScreen('screen-game');
+    }
+
+    function getNewQuestion() {
+      // Ocultar feedback y botón de siguiente
+      document.getElementById('feedback-panel').classList.add('d-none');
+      document.getElementById('next-btn').classList.add('d-none');
+      
+      // Comprobación de fin de partida en modo clásico (10 preguntas)
+      if (currentMode === 'classic' && classicIndex > 10) {
+        endGame();
+        return;
+      }
+
+      // Evitar quedarse sin frases en partidas largas (las volvemos a barajar si se acaban)
+      if (activeQuestionList.length === 0) {
+        activeQuestionList = shuffleArray([...SIMPSONS_QUOTES]);
+      }
+
+      // Extrae la siguiente frase de la lista barajada
+      currentQuestion = activeQuestionList.pop();
+
+      // Asegurar que el personaje autor de la frase actual está en la piscina
+      const correctAuthor = currentQuestion.character;
+      if (!characterPool.includes(correctAuthor)) {
+        characterPool.push(correctAuthor);
+      }
+
+      // Rellenar la barra de progreso
+      updateProgressLabel();
+
+      // Poner el texto de la frase en la pizarra
+      const quoteTextElement = document.getElementById('quote-text');
+      quoteTextElement.innerText = `"${currentQuestion.quote[gameLanguage]}"`;
+      
+      // Eliminar animación de error de la pizarra anterior
+      document.getElementById('trivia-card').classList.remove('shake-card');
+
+      // Generar opciones y renderizar botones
+      const choices = generateChoices(correctAuthor);
+      renderOptionButtons(choices, correctAuthor);
+
+      // Iniciar el temporizador para la pregunta
+      if (currentMode !== 'time-rush') {
+        // En clásico y supervivencia, se reinicia el reloj por pregunta
+        timeRemaining = baseTimeLimit;
+        startCountdown();
+      } else {
+        // En Contra Reloj el cronómetro corre de forma continua en segundo plano
+        if (!timerInterval) {
+          startCountdownContinuous();
+        }
+      }
+    }
+
+    // Genera 4 opciones únicas: la correcta + 3 distractores aleatorios
+    function generateChoices(correctCharacter) {
+      // Filtrar el personaje correcto del pool de distractores para evitar duplicados
+      const distractorsPool = characterPool.filter(name => name !== correctCharacter);
+      
+      // Barajar los distractores y seleccionar los primeros 3
+      const shuffledDistractors = shuffleArray([...distractorsPool]);
+      const selectedDistractors = shuffledDistractors.slice(0, 3);
+      
+      // Combinar y barajar el array final de 4 opciones
+      return shuffleArray([correctCharacter, ...selectedDistractors]);
+    }
+
+    // Renderiza los 4 botones de opción con diseño de estilo de cómic
+    function renderOptionButtons(choices, correctAuthor) {
+      const container = document.getElementById('options-grid');
+      container.innerHTML = ''; // Limpiar opciones anteriores
+
+      // Clases de colores base al estilo cómic para alternar
+      const colorClasses = ['opt-blue', 'opt-green', 'opt-orange', 'opt-pink'];
+
+      choices.forEach((choice, index) => {
+        const col = document.createElement('div');
+        col.className = 'col-sm-6';
+
+        const btn = document.createElement('button');
+        btn.className = `btn comic-btn-choice ${colorClasses[index % colorClasses.length]}`;
+        btn.setAttribute('aria-label', `Opción ${index + 1}: ${choice}`);
+        btn.setAttribute('role', 'option');
+        
+        // Obtener la imagen del personaje si está disponible
+        const imageUrl = getCharacterImageUrl(choice);
+        
+        if (imageUrl) {
+          btn.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center gap-2">
+              <img src="${imageUrl}" alt="${choice}" class="character-option-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+              <span class="character-fallback fs-4 me-2" style="display:none" aria-hidden="true">${getCharacterEmoji(choice)}</span>
+              <span class="character-name">${choice}</span>
+            </div>
+          `;
+        } else {
+          // Fallback a emoji si no hay imagen
+          const emoji = getCharacterEmoji(choice);
+          btn.innerHTML = `<span class="fs-4 me-2" aria-hidden="true">${emoji}</span>${choice}`;
+        }
+        
+        // Evento de clic en la opción
+        btn.onclick = () => handleAnswerSelect(choice, btn, correctAuthor);
+
+        col.appendChild(btn);
+        container.appendChild(col);
+      });
+    }
+
+    // Obtiene un emoji para añadir vistosidad a las opciones
+    function getCharacterEmoji(name) {
+      const normalized = name.toLowerCase();
+      for (const [key, emoji] of Object.entries(CHARACTER_EMOJIS)) {
+        if (normalized.includes(key)) {
+          return emoji;
+        }
+      }
+      return "👤";
+    }
+
+    /* ==========================================================
+       6. EVALUACIÓN Y RETROALIMENTACIÓN DE RESPUESTAS
+       ========================================================== */
+    function handleAnswerSelect(selected, selectedButton, correct) {
+      // Detener temporalmente el reloj
+      if (currentMode !== 'time-rush') {
+        clearInterval(timerInterval);
+      }
+
+      // Desactivar todos los botones de opciones para evitar múltiples clics
+      disableOptionButtons();
+
+      questionsAnswered++;
+      const isCorrect = (selected === correct);
+
+      if (isCorrect) {
+        correctCount++;
+        selectedButton.classList.add('opt-correct');
+        soundManager.playCorrect();
+        
+        // Cálculo de Puntos
+        let pointsEarned = 100;
+        if (currentMode === 'classic') {
+          // Bonus de velocidad: hasta 100 puntos extra por contestar rápido
+          const speedBonus = Math.round(timeRemaining * 10);
+          pointsEarned += speedBonus;
+        }
+        
+        gameScore += pointsEarned;
+        updateScoreUI();
+
+        // En modo Contra Reloj sumamos 3 segundos extra
+        if (currentMode === 'time-rush') {
+          timeRemaining += 3.0;
+        }
+
+        showFeedback(true, pointsEarned);
+
+        // Efecto Confetti si es un acierto muy rápido o récord
+        if (timeRemaining > 8.0 && currentMode === 'classic') {
+          triggerFastConfetti();
+        }
+
+      } else {
+        selectedButton.classList.add('opt-incorrect');
+        soundManager.playWrong();
+        
+        // Muestra cuál era la opción correcta cambiándole el borde/color
+        highlightCorrectButton(correct);
+
+        // Sacudir la pizarra en señal de error
+        document.getElementById('trivia-card').classList.add('shake-card');
+
+        // En modo Contra Reloj restamos 5 segundos
+        if (currentMode === 'time-rush') {
+          timeRemaining = Math.max(0, timeRemaining - 5.0);
+        }
+
+        if (currentMode === 'survival') {
+          livesRemaining = 0; // Game Over al fallar una sola vez
+        }
+
+        showFeedback(false, 0, correct);
+      }
+
+      // Ajustes en dificultad progresiva para supervivencia
+      if (currentMode === 'survival' && isCorrect) {
+        // Reducir gradualmente el tiempo límite para la siguiente pregunta (mínimo 3 segundos)
+        baseTimeLimit = Math.max(3.0, 10.0 - (correctCount * 0.5));
+      }
+
+      // Revelar botón para pasar a la siguiente pregunta
+      const nextBtn = document.getElementById('next-btn');
+      nextBtn.classList.remove('d-none');
+    }
+
+    // Resalta el botón correcto cuando el jugador se equivoca o expira el tiempo
+    function highlightCorrectButton(correctName) {
+      const buttons = document.querySelectorAll('.comic-btn-choice');
+      buttons.forEach(btn => {
+        if (btn.innerText.trim().endsWith(correctName.trim())) {
+          btn.classList.add('opt-correct');
+        }
+      });
+    }
+
+    function disableOptionButtons() {
+      document.querySelectorAll('.comic-btn-choice').forEach(btn => {
+        btn.disabled = true;
+      });
+    }
+
+    // Muestra cartel de retroalimentación
+    function showFeedback(isCorrect, points, correctAuthor = '') {
+      const panel = document.getElementById('feedback-panel');
+      const alertDiv = document.getElementById('feedback-alert');
+      const msg = document.getElementById('feedback-message');
+      
+      panel.classList.remove('d-none');
+
+      if (isCorrect) {
+        alertDiv.className = 'comic-alert alert-correct';
+        msg.innerHTML = gameLanguage === 'es' 
+          ? `¡Excelente! +${points} pts`
+          : `Excellent! +${points} pts`;
+      } else {
+        alertDiv.className = 'comic-alert alert-incorrect';
+        msg.innerHTML = gameLanguage === 'es'
+          ? `¡D'oh! Era <strong>${correctAuthor}</strong>`
+          : `D'oh! It was <strong>${correctAuthor}</strong>`;
+      }
+    }
+
+    function nextQuestion() {
+      if (currentMode === 'classic') {
+        classicIndex++;
+        getNewQuestion();
+      } else if (currentMode === 'survival' && livesRemaining <= 0) {
+        endGame();
+      } else {
+        getNewQuestion();
+      }
+    }
+
+    /* ==========================================================
+       7. TIMERS (CON INTERVALOS Y CONTROLES DIVERSIFICADOS)
+       ========================================================== */
+    function startCountdown() {
+      clearInterval(timerInterval);
+      updateTimerUI(timeRemaining);
+
+      timerInterval = setInterval(() => {
+        timeRemaining -= 0.1;
+        if (timeRemaining <= 0) {
+          timeRemaining = 0;
+          clearInterval(timerInterval);
+          handleTimeExpired();
+        } else {
+          // Sonido de tic-tac en los últimos 3 segundos para añadir tensión
+          if (timeRemaining <= 3.0 && Math.abs((timeRemaining * 10) % 10) < 0.1) {
+            soundManager.playTick();
+          }
+        }
+        updateTimerUI(timeRemaining);
+      }, 100);
+    }
+
+    // Cuenta atrás continua para el modo Contra Reloj
+    function startCountdownContinuous() {
+      clearInterval(timerInterval);
+      
+      timerInterval = setInterval(() => {
+        timeRemaining -= 0.1;
+        if (timeRemaining <= 0) {
+          timeRemaining = 0;
+          clearInterval(timerInterval);
+          timerInterval = null;
+          updateTimerUI(0);
+          endGame(); // Se acaba el tiempo global
+        } else {
+          // Tic-tac sonoro en los últimos 5 segundos del temporizador global
+          if (timeRemaining <= 5.0 && Math.abs((timeRemaining * 10) % 10) < 0.1) {
+            soundManager.playTick();
+          }
+        }
+        updateTimerUI(timeRemaining);
+      }, 100);
+    }
+
+    function handleTimeExpired() {
+      disableOptionButtons();
+      soundManager.playWrong();
+      
+      const correctAuthor = currentQuestion.character;
+      highlightCorrectButton(correctAuthor);
+
+      const panel = document.getElementById('feedback-panel');
+      const alertDiv = document.getElementById('feedback-alert');
+      const msg = document.getElementById('feedback-message');
+      
+      panel.classList.remove('d-none');
+      alertDiv.className = 'comic-alert alert-timeout';
+      msg.innerHTML = gameLanguage === 'es'
+        ? `¡Se acabó el tiempo! Era <strong>${correctAuthor}</strong>`
+        : `Time's up! It was <strong>${correctAuthor}</strong>`;
+
+      if (currentMode === 'survival') {
+        livesRemaining = 0;
+      }
+
+      document.getElementById('next-btn').classList.remove('d-none');
+    }
+
+    function updateTimerUI(seconds) {
+      const maxLimit = (currentMode === 'time-rush') ? 60.0 : baseTimeLimit;
+      const percentage = Math.min(100, (seconds / maxLimit) * 100);
+      
+      const progressBar = document.getElementById('timer-progress');
+      progressBar.style.width = `${percentage}%`;
+      progressBar.setAttribute('aria-valuenow', percentage);
+      
+      // Color progresivo de la barra (Verde -> Naranja -> Rosa)
+      if (percentage > 50) {
+        progressBar.className = 'progress-bar bg-success-comic';
+      } else if (percentage > 25) {
+        progressBar.className = 'progress-bar bg-warning-comic';
+      } else {
+        progressBar.className = 'progress-bar bg-danger-comic';
+      }
+
+      document.getElementById('timer-text').innerText = `${seconds.toFixed(1)}s`;
+    }
+
+    /* ==========================================================
+       8. GESTIÓN DE PUNTUACIONES MÁXIMAS Y PANTALLA DE RESULTADOS
+       ========================================================= */
+    function endGame() {
+      // Parar todos los cronómetros
+      clearInterval(timerInterval);
+      timerInterval = null;
+
+      // Comprobar si se ha batido el récord
+      const recordKey = `simpsons_quotes_highscore_${currentMode}`;
+      const previousHigh = parseInt(localStorage.getItem(recordKey) || '0');
+      let isNewRecord = false;
+
+      if (gameScore > previousHigh) {
+        localStorage.setItem(recordKey, gameScore);
+        isNewRecord = true;
+      }
+
+      const activeHighScore = Math.max(gameScore, previousHigh);
+
+      // Renderizar valores finales en la UI
+      document.getElementById('final-score').innerText = gameScore;
+      document.getElementById('result-high-score').innerText = activeHighScore;
+      document.getElementById('nav-high-score').innerText = activeHighScore;
+
+      // Detalle de aciertos
+      const totalAsked = (currentMode === 'classic') ? 10 : questionsAnswered;
+      const percentage = totalAsked > 0 ? Math.round((correctCount / totalAsked) * 100) : 0;
+      
+      document.getElementById('stat-accuracy').innerHTML = gameLanguage === 'es'
+        ? `Respuestas correctas: <strong>${correctCount}</strong> de <strong>${totalAsked}</strong> (<strong>${percentage}%</strong>)`
+        : `Correct answers: <strong>${correctCount}</strong> of <strong>${totalAsked}</strong> (<strong>${percentage}%</strong>)`;
+
+      // Determinar rango del personaje
+      evaluateRank(percentage);
+
+      // Sonido de victoria y Confetti si se logra un récord o puntuación perfecta
+      if (isNewRecord || percentage >= 80) {
+        soundManager.playVictory();
+        triggerVictoryConfetti();
+      } else {
+        // Sonido estándar de fin de juego
+        soundManager.playWrong();
+      }
+
+      showScreen('screen-gameover');
+    }
+
+    function evaluateRank(accuracy) {
+      const avatarEl = document.getElementById('rank-avatar');
+      const tierEl = document.getElementById('rank-tier');
+      const descEl = document.getElementById('rank-desc');
+
+      if (accuracy < 30) {
+        avatarEl.innerText = "🖍️";
+        tierEl.innerText = gameLanguage === 'es' ? "Rango: Ralph Wiggum" : "Rank: Ralph Wiggum";
+        descEl.innerText = gameLanguage === 'es' 
+          ? "¡Mi gato se llama Guantes! Tu puntuación es digna de comer pegamento escolar."
+          : "My cat's name is Mittens! Your score is worthy of eating school glue.";
+      } else if (accuracy < 60) {
+        avatarEl.innerText = "🍩";
+        tierEl.innerText = gameLanguage === 'es' ? "Rango: Homer Simpson" : "Rank: Homer Simpson";
+        descEl.innerText = gameLanguage === 'es'
+          ? "¡D'oh! Necesitas comer un par de donas y volver a ver las primeras temporadas."
+          : "D'oh! You need to eat a couple of donuts and rewatch the classic seasons.";
+      } else if (accuracy < 80) {
+        avatarEl.innerText = "🛹";
+        tierEl.innerText = gameLanguage === 'es' ? "Rango: Bart Simpson" : "Rank: Bart Simpson";
+        descEl.innerText = gameLanguage === 'es'
+          ? "¡Multiplícate por cero! Has estado cerca, pero has preferido hacer alguna travesura."
+          : "Eat my shorts! You were close, but you chose to pull some pranks instead.";
+      } else if (accuracy < 100) {
+        avatarEl.innerText = "🎷";
+        tierEl.innerText = gameLanguage === 'es' ? "Rango: Lisa Simpson" : "Rank: Lisa Simpson";
+        descEl.innerText = gameLanguage === 'es'
+          ? "¡Excelente intelecto! Has demostrado un nivel brillante digno del saxofón."
+          : "Superb intellect! You proved a brilliant intelligence worthy of the saxophone.";
+      } else {
+        avatarEl.innerText = "☢️";
+        tierEl.innerText = gameLanguage === 'es' ? "Rango: Sr. Burns (¡Perfecto!)" : "Rank: Mr. Burns (Perfect!)";
+        descEl.innerText = gameLanguage === 'es'
+          ? "¡EXCELENTE! Eres el dueño absoluto de Springfield y te sabes cada diálogo al pie de la letra."
+          : "EXCELLENT! You are the absolute owner of Springfield and know every dialogue by heart.";
+      }
+    }
+
+    function loadHighScores() {
+      const recordKey = `simpsons_quotes_highscore_${currentMode}`;
+      const record = localStorage.getItem(recordKey) || '0';
+      document.getElementById('nav-high-score').innerText = record;
+    }
+
+    /* ==========================================================
+       9. CONFETTI Y TRUCOS VISUALES PREMIUM
+       ========================================================== */
+    function triggerVictoryConfetti() {
+      // Lanzamiento de fuegos artificiales de confetti usando canvas-confetti
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+      }, 250);
+    }
+
+    function triggerFastConfetti() {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.8 }
+      });
+    }
+
+    /* ==========================================================
+       10. CONTROLADORES DOM Y MULTILINGÜE
+       ========================================================== */
+    function showScreen(screenId) {
+      const screens = ['screen-welcome', 'screen-loading', 'screen-game', 'screen-gameover'];
+      screens.forEach(id => {
+        const el = document.getElementById(id);
+        if (id === screenId) {
+          el.classList.remove('d-none');
+        } else {
+          el.classList.add('d-none');
+        }
+      });
+    }
+
+    // Refresca la puntuación actual en la interfaz
+    function updateScoreUI() {
+      document.getElementById('game-score-label').innerText = `Score: ${gameScore}`;
+    }
+
+    function updateProgressLabel() {
+      const label = document.getElementById('game-progress-label');
+      if (currentMode === 'classic') {
+        label.innerText = gameLanguage === 'es' 
+          ? `Pregunta ${classicIndex} de 10`
+          : `Question ${classicIndex} of 10`;
+      } else if (currentMode === 'survival') {
+        label.innerText = gameLanguage === 'es'
+          ? `Racha: ${correctCount}`
+          : `Streak: ${correctCount}`;
+      } else {
+        label.innerText = gameLanguage === 'es'
+          ? `Aciertos: ${correctCount}`
+          : `Correct: ${correctCount}`;
+      }
+    }
+
+    function updateLoadingStatus(titleEs, subEs) {
+      const title = document.getElementById('loading-text');
+      const sub = document.getElementById('loading-sub');
+      
+      title.innerText = gameLanguage === 'es' ? titleEs : getEnglishLoadingTitle(titleEs);
+      sub.innerText = gameLanguage === 'es' ? subEs : getEnglishLoadingSub(subEs);
+    }
+
+    function getEnglishLoadingTitle(titleEs) {
+      if (titleEs.includes("API de Springfield")) return "Connecting with Springfield API...";
+      if (titleEs.includes("no disponible")) return "Primary API unavailable.";
+      return "Loading...";
+    }
+
+    function getEnglishLoadingSub(subEs) {
+      if (subEs.includes("HTTP")) return "Performing HTTP requests...";
+      if (subEs.includes("alternativa")) return "Connecting to alternative database (SampleAPIs)...";
+      return "Querying database...";
+    }
+
+    // Cambia el idioma de los textos estáticos en base a atributos data-*
+    function toggleLanguage() {
+      gameLanguage = (gameLanguage === 'es') ? 'en' : 'es';
+      document.getElementById('lang-label').innerText = gameLanguage.toUpperCase();
+      
+      // Traducir todos los elementos marcados con data-es/data-en
+      document.querySelectorAll('[data-es]').forEach(el => {
+        el.innerHTML = el.getAttribute(`data-${gameLanguage}`);
+      });
+
+      // Traducir dinámicamente si estamos en juego
+      if (currentQuestion) {
+        document.getElementById('quote-text').innerText = `"${currentQuestion.quote[gameLanguage]}"`;
+      }
+      
+      updateProgressLabel();
+      updateScoreUI();
+    }
+
+    // Alternar entre temas claro y oscuro
+    function toggleTheme() {
+      const body = document.body;
+      const themeIcon = document.getElementById('theme-icon');
+      
+      body.classList.toggle('dark-mode');
+      
+      if (body.classList.contains('dark-mode')) {
+        themeIcon.className = 'bi bi-sun-fill';
+        // Crear estrellas en el fondo
+        createStars();
+      } else {
+        themeIcon.className = 'bi bi-moon-fill';
+        removeStars();
+      }
+    }
+
+    // Añade estrellas centelleantes al fondo oscuro
+    function createStars() {
+      const bg = document.getElementById('sky-bg');
+      // Crear 30 estrellas dispersas
+      for (let i = 0; i < 30; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        star.style.left = `${Math.random() * 100}vw`;
+        star.style.top = `${Math.random() * 100}vh`;
+        // Retrasos aleatorios para parpadeo asíncrono
+        star.style.animationDelay = `${Math.random() * 3}s`;
+        bg.appendChild(star);
+      }
+    }
+
+    function removeStars() {
+      document.querySelectorAll('.star').forEach(el => el.remove());
+    }
+
+    /* Helper simple para barajar arrays (Algoritmo Fisher-Yates) */
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    /* ==========================================================
+       11. INICIALIZACIÓN DE LISTENERS
+       ========================================================= */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Botón comenzar
+      document.getElementById('start-game-btn').addEventListener('click', startNewGame);
+      
+      // Botón siguiente pregunta
+      document.getElementById('next-btn').addEventListener('click', nextQuestion);
+      
+      // Botón volver a jugar
+      document.getElementById('retry-btn').addEventListener('click', startNewGame);
+      
+      // Soporte para navegación por teclado en modos de juego
+      document.querySelectorAll('.mode-option').forEach(option => {
+        option.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            option.click();
+          }
+        });
+      });
+      
+      // Botón menú principal
+      document.getElementById('menu-btn').addEventListener('click', () => {
+        loadHighScores();
+        showScreen('screen-welcome');
+      });
+
+      // Controles barra superior
+      document.getElementById('lang-btn').addEventListener('click', toggleLanguage);
+      document.getElementById('sound-btn').addEventListener('click', () => soundManager.toggle());
+      document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+
+      // Cargar el juego inicial
+      loadInitialData();
+    });
+  </script>
+</body>
+</html>
